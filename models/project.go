@@ -9,8 +9,9 @@ type Project struct {
 	Status       string    `json:"status"` // e.g. "Live" or "Draft"
 	ImageURL     string    `json:"image_url"`
 	DateModified time.Time `json:"date_modified" gorm:"autoUpdateTime"`
+	IsComplete   bool      `json:"is_complete"`
 
-	// Using GORM's serializer to store JSON arrays as text in SQLite
+	// Using GORM's serializer to store JSON arrays as text in 
 	TechStack   []string `json:"tech_stack" gorm:"serializer:json"`
 	ProjectFlow []string `json:"project_flow" gorm:"serializer:json"`
 	JobDesc     []string `json:"jobdesc" gorm:"serializer:json"`

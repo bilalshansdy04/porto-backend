@@ -29,5 +29,11 @@ func SetupRoutes(r *gin.Engine) {
 		api.POST("/experiences", controllers.CreateExperience)
 		api.PUT("/experiences/:id", controllers.UpdateExperience)
 		api.DELETE("/experiences/:id", controllers.DeleteExperience)
+
+		// Skills
+		api.GET("/skills", controllers.GetSkills)
+		api.POST("/skills", controllers.CreateSkill)
+		api.PUT("/skills/:id", controllers.UpdateSkill)
+		api.DELETE("/skills/:id", controllers.DeleteSkill)
 	}
 }

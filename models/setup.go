@@ -19,7 +19,7 @@ func ConnectDatabase() {
 		log.Fatal("Failed to connect to database! Please make sure database 'porto' exists.", err)
 	}
 
-	err = database.AutoMigrate(&Profile{}, &Project{}, &Experience{})
+	err = database.AutoMigrate(&Profile{}, &Project{}, &Experience{}, &Skill{})
 	if err != nil {
 		log.Fatal("Failed to migrate database!", err)
 	}

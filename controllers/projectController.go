@@ -46,9 +46,10 @@ func CreateProject(c *gin.Context) {
 	}
 
 	project := models.Project{
-		Name:     name,
-		ImageURL: imageURL,
-		Status:   "Draft", // Default status
+		Name:       name,
+		ImageURL:   imageURL,
+		Status:     "Draft", // Default status
+		IsComplete: false,
 	}
 
 	models.DB.Create(&project)
@@ -70,6 +71,15 @@ func UpdateProject(c *gin.Context) {
 	}
 
 	models.DB.Model(&project).Updates(input)
+
+	// Check completeness: no null/empty required fields
+	isComplete := project.Name != "" && project.Description != "" && project.ImageURL != "" && len(project.TechStack) > 0 && len(project.ProjectFlow) > 0 && len(project.JobDesc) > 0
+	
+	if project.IsComplete != isComplete {
+		project.IsComplete = isComplete
+		models.DB.Model(&project).Update("is_complete", isComplete)
+	}
+
 	c.JSON(http.StatusOK, project)
 }
 
