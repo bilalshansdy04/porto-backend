@@ -1,14 +1,22 @@
 package main
 
 import (
+	"backend-porto/models"
+	"backend-porto/routes"
 	"log"
-	"net/http"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Ensure uploads directory exists
+	os.MkdirAll("public/uploads", os.ModePerm)
+
+	// Connect to Database
+	models.ConnectDatabase()
+
 	r := gin.Default()
 
 	// CORS configuration for the frontend
@@ -21,10 +29,13 @@ func main() {
 	}))
 
 	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
+
+	// Setup API routes
+	routes.SetupRoutes(r)
 
 	log.Println("Starting server on :8080...")
 	if err := r.Run(":8080"); err != nil {
