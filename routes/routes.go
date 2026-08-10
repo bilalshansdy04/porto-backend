@@ -12,6 +12,10 @@ func SetupRoutes(r *gin.Engine) {
 
 	api := r.Group("/api")
 	{
+		// Settings
+		api.GET("/settings", controllers.GetSettings)
+		api.PUT("/settings", controllers.UpdateSettings)
+
 		// Dashboard & Profile
 		api.GET("/dashboard/stats", controllers.GetDashboardStats)
 		api.POST("/profile", controllers.CreateProfile)
