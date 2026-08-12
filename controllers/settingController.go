@@ -18,6 +18,7 @@ func GetSettings(c *gin.Context) {
 	if result.Error != nil {
 		setting = models.Setting{
 			ShowExperience: true,
+			ShowPhoto:      true,
 			Language:       "id",
 		}
 		if err := models.DB.Create(&setting).Error; err != nil {
@@ -43,7 +44,7 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&setting).Select("ShowExperience", "Language").Updates(input)
+	models.DB.Model(&setting).Select("ShowExperience", "ShowPhoto", "Language").Updates(input)
 
 	c.JSON(http.StatusOK, setting)
 }
