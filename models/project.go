@@ -12,7 +12,9 @@ type Project struct {
 	IsComplete   bool      `json:"is_complete"`
 
 	// Using GORM's serializer to store JSON arrays as text in 
-	TechStack   []string `json:"tech_stack" gorm:"serializer:json"`
-	ProjectFlow []string `json:"project_flow" gorm:"serializer:json"`
-	JobDesc     []string `json:"jobdesc" gorm:"serializer:json"`
+	TechStack      []string `json:"tech_stack" gorm:"serializer:json"`
+	ProjectFlow    []string `json:"project_flow" gorm:"serializer:json"`
+	JobDesc        []string `json:"jobdesc" gorm:"serializer:json"`
+	Link           string   `json:"link"`
+	CarouselImages []string `json:"carousel_images" gorm:"serializer:json"`
 }
