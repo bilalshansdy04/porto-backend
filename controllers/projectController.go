@@ -2,13 +2,17 @@ package controllers
 
 import (
 	"backend-porto/models"
-	"fmt"
+	"context"
 	"net/http"
-	"path/filepath"
-	"time"
 
+	"github.com/cloudinary/cloudinary-go/v2"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gin-gonic/gin"
 )
+
+// CleanupUnusedImages is a no-op for Cloudinary
+func CleanupUnusedImages() {
+}
 
 // GetProjects returns all projects
 func GetProjects(c *gin.Context) {
@@ -33,23 +37,25 @@ func CreateProject(c *gin.Context) {
 	name := c.PostForm("name")
 	
 	// Handle image upload
-	file, err := c.FormFile("image")
+	fileHeader, err := c.FormFile("image")
 	var imageURL string
 	if err == nil {
-		filename := fmt.Sprintf("%d_%s", time.Now().Unix(), filepath.Base(file.Filename))
-		uploadPath := filepath.Join("public", "uploads", filename)
-		if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
-			return
+		file, _ := fileHeader.Open()
+		defer file.Close()
+		cld, err := cloudinary.New()
+		if err == nil {
+			resp, err := cld.Upload.Upload(context.Background(), file, uploader.UploadParams{Folder: "portfolio"})
+			if err == nil {
+				imageURL = resp.SecureURL
+			}
 		}
-		imageURL = "/uploads/" + filename // Route serving static files
 	}
 
 	project := models.Project{
 		Name:       name,
 		ImageURL:   imageURL,
 		Status:     "Draft", // Default status
-		IsComplete: false,
+		IsVisible:  false,
 	}
 
 	models.DB.Create(&project)
@@ -70,16 +76,9 @@ func UpdateProject(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&project).Select("Name", "Description", "Status", "IsComplete", "TechStack", "ProjectFlow", "JobDesc", "Link", "CarouselImages").Updates(input)
+	models.DB.Model(&project).Select("Name", "Description", "Status", "IsVisible", "TechStack", "ProjectFlow", "JobDesc", "Link", "CarouselImages").Updates(input)
 
-	// Check completeness: no null/empty required fields
-	hasImage := project.ImageURL != "" || len(project.CarouselImages) > 0
-	isComplete := project.Name != "" && project.Description != "" && hasImage && len(project.TechStack) > 0 && len(project.ProjectFlow) > 0 && len(project.JobDesc) > 0
-	
-	if project.IsComplete != isComplete {
-		project.IsComplete = isComplete
-		models.DB.Model(&project).Update("is_complete", isComplete)
-	}
+	go CleanupUnusedImages()
 
 	c.JSON(http.StatusOK, project)
 }
@@ -93,6 +92,7 @@ func DeleteProject(c *gin.Context) {
 	}
 
 	models.DB.Delete(&project)
+	go CleanupUnusedImages()
 	c.JSON(http.StatusOK, gin.H{"message": "Project deleted successfully"})
 }
 
@@ -117,18 +117,21 @@ func UploadProjectImages(c *gin.Context) {
 	}
 
 	var newImageURLs []string
-	for _, file := range files {
-		filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(file.Filename))
-		uploadPath := filepath.Join("public", "uploads", filename)
-		if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-			continue // Skip failed uploads
+	cld, _ := cloudinary.New()
+	for _, fileHeader := range files {
+		file, _ := fileHeader.Open()
+		resp, err := cld.Upload.Upload(context.Background(), file, uploader.UploadParams{Folder: "portfolio"})
+		file.Close()
+		if err == nil {
+			newImageURLs = append(newImageURLs, resp.SecureURL)
 		}
-		newImageURLs = append(newImageURLs, "/uploads/"+filename)
 	}
 
 	// Append to existing carousel images
 	project.CarouselImages = append(project.CarouselImages, newImageURLs...)
 	models.DB.Save(&project)
+
+	go CleanupUnusedImages()
 
 	c.JSON(http.StatusOK, project)
 }
@@ -141,21 +144,30 @@ func UpdateProjectThumbnail(c *gin.Context) {
 		return
 	}
 
-	file, err := c.FormFile("image")
+	fileHeader, err := c.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No image provided"})
 		return
 	}
 
-	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), filepath.Base(file.Filename))
-	uploadPath := filepath.Join("public", "uploads", filename)
-	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+	file, _ := fileHeader.Open()
+	defer file.Close()
+	cld, err := cloudinary.New()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cloudinary config error"})
 		return
 	}
 
-	project.ImageURL = "/uploads/" + filename
+	resp, err := cld.Upload.Upload(context.Background(), file, uploader.UploadParams{Folder: "portfolio"})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload to Cloudinary"})
+		return
+	}
+
+	project.ImageURL = resp.SecureURL
 	models.DB.Save(&project)
+
+	go CleanupUnusedImages()
 
 	c.JSON(http.StatusOK, project)
 }

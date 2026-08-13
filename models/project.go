@@ -2,6 +2,11 @@ package models
 
 import "time"
 
+type ProjectItem struct {
+	Text      string `json:"text"`
+	IsVisible bool   `json:"is_visible"`
+}
+
 type Project struct {
 	ID           uint      `json:"id" gorm:"primary_key"`
 	Name         string    `json:"name"`
@@ -9,12 +14,12 @@ type Project struct {
 	Status       string    `json:"status"` // e.g. "Live" or "Draft"
 	ImageURL     string    `json:"image_url"`
 	DateModified time.Time `json:"date_modified" gorm:"autoUpdateTime"`
-	IsComplete   bool      `json:"is_complete"`
+	IsVisible    bool      `json:"is_visible"`
 
-	// Using GORM's serializer to store JSON arrays as text in 
-	TechStack      []string `json:"tech_stack" gorm:"serializer:json"`
-	ProjectFlow    []string `json:"project_flow" gorm:"serializer:json"`
-	JobDesc        []string `json:"jobdesc" gorm:"serializer:json"`
-	Link           string   `json:"link"`
-	CarouselImages []string `json:"carousel_images" gorm:"serializer:json"`
+	// Using GORM's serializer to store JSON arrays as text
+	TechStack      []string      `json:"tech_stack" gorm:"serializer:json"`
+	ProjectFlow    []ProjectItem `json:"project_flow" gorm:"serializer:json"`
+	JobDesc        []ProjectItem `json:"jobdesc" gorm:"serializer:json"`
+	Link           string        `json:"link"`
+	CarouselImages []string      `json:"carousel_images" gorm:"serializer:json"`
 }
