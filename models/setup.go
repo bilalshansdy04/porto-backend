@@ -64,7 +64,7 @@ func ConnectDatabase() {
 		log.Println("Connected to MySQL/TiDB database!")
 	}
 
-	err = database.AutoMigrate(&Profile{}, &Project{}, &Experience{}, &Skill{}, &Setting{})
+	err = database.AutoMigrate(&Profile{}, &Project{}, &ImageScreenshot{}, &Experience{}, &Skill{}, &Setting{})
 	if err != nil {
 		log.Fatal("Failed to migrate database!", err)
 	}

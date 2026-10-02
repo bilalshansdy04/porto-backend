@@ -17,14 +17,14 @@ func CleanupUnusedImages() {
 // GetProjects returns all projects
 func GetProjects(c *gin.Context) {
 	var projects []models.Project
-	models.DB.Order("date_modified desc").Find(&projects)
+	models.DB.Preload("Screenshots").Order("date_modified desc").Find(&projects)
 	c.JSON(http.StatusOK, projects)
 }
 
 // GetProject returns a single project by ID
 func GetProject(c *gin.Context) {
 	var project models.Project
-	if err := models.DB.First(&project, c.Param("id")).Error; err != nil {
+	if err := models.DB.Preload("Screenshots").First(&project, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
 		return
 	}
@@ -65,7 +65,7 @@ func CreateProject(c *gin.Context) {
 // UpdateProject updates project details (including flow, jobdesc, tech stack)
 func UpdateProject(c *gin.Context) {
 	var project models.Project
-	if err := models.DB.First(&project, c.Param("id")).Error; err != nil {
+	if err := models.DB.Preload("Screenshots").First(&project, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
 		return
 	}
@@ -76,7 +76,11 @@ func UpdateProject(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&project).Select("Name", "Description", "Status", "IsVisible", "TechStack", "ProjectFlow", "JobDesc", "Link", "CarouselImages", "Screenshots").Updates(input)
+	models.DB.Model(&project).Select("Name", "Description", "Status", "IsVisible", "TechStack", "ProjectFlow", "JobDesc", "Link", "CarouselImages").Updates(input)
+	models.DB.Model(&project).Association("Screenshots").Replace(input.Screenshots)
+
+	// Refetch to include updated screenshots in response
+	models.DB.Preload("Screenshots").First(&project, project.ID)
 
 	go CleanupUnusedImages()
 
@@ -86,7 +90,7 @@ func UpdateProject(c *gin.Context) {
 // DeleteProject removes a project
 func DeleteProject(c *gin.Context) {
 	var project models.Project
-	if err := models.DB.First(&project, c.Param("id")).Error; err != nil {
+	if err := models.DB.Preload("Screenshots").First(&project, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
 		return
 	}
@@ -99,7 +103,7 @@ func DeleteProject(c *gin.Context) {
 // UploadProjectImages handles uploading multiple images for the project carousel
 func UploadProjectImages(c *gin.Context) {
 	var project models.Project
-	if err := models.DB.First(&project, c.Param("id")).Error; err != nil {
+	if err := models.DB.Preload("Screenshots").First(&project, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
 		return
 	}
@@ -128,13 +132,20 @@ func UploadProjectImages(c *gin.Context) {
 	}
 
 	// Append to existing screenshots
+	var newScreenshots []models.ImageScreenshot
 	for _, url := range newImageURLs {
-		project.Screenshots = append(project.Screenshots, models.ProjectScreenshot{
-			ImageURL:    url,
-			Title:       "",
+		newScreenshots = append(newScreenshots, models.ImageScreenshot{
+			ProjectID: project.ID,
+			ImageURL:  url,
+			Title:     "",
 		})
 	}
-	models.DB.Save(&project)
+	if len(newScreenshots) > 0 {
+		models.DB.Create(&newScreenshots)
+	}
+
+	// Reload project with screenshots
+	models.DB.Preload("Screenshots").First(&project, project.ID)
 
 	go CleanupUnusedImages()
 
@@ -144,7 +155,7 @@ func UploadProjectImages(c *gin.Context) {
 // UpdateProjectThumbnail handles uploading a new main thumbnail
 func UpdateProjectThumbnail(c *gin.Context) {
 	var project models.Project
-	if err := models.DB.First(&project, c.Param("id")).Error; err != nil {
+	if err := models.DB.Preload("Screenshots").First(&project, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
 		return
 	}
