@@ -15,10 +15,9 @@ var initErr error
 
 func init() {
 	// Let's capture the env vars to see if they are empty
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
+	tursoURL := os.Getenv("TURSO_DATABASE_URL")
 	
-	if host == "" || port == "" {
+	if tursoURL == "" {
 		// We won't crash, we'll store the error to display it in the browser
 		initErr = os.ErrNotExist // Just a marker
 	} else {
@@ -55,7 +54,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if initErr != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "Environment variables DB_HOST or DB_PORT are empty. Vercel is not injecting them.", "host": "` + os.Getenv("DB_HOST") + `", "port": "` + os.Getenv("DB_PORT") + `"}`))
+		w.Write([]byte(`{"error": "Database environment variables are missing (TURSO_DATABASE_URL or DB_HOST/DB_PORT). Vercel is not injecting them."}`))
 		return
 	}
 	app.ServeHTTP(w, r)
