@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"time"
+	"gorm.io/gorm"
+)
 
 type ProjectItem struct {
 	Text      string `json:"text"`
@@ -28,4 +31,11 @@ type Project struct {
 	Link           string              `json:"link"`
 	CarouselImages []string            `json:"carousel_images" gorm:"serializer:json"`
 	Screenshots    []ProjectScreenshot `json:"screenshots" gorm:"serializer:json"`
+}
+
+func (p *Project) BeforeCreate(tx *gorm.DB) (err error) {
+	var maxId int64
+	tx.Model(&Project{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
+	p.ID = uint(maxId + 1)
+	return
 }
