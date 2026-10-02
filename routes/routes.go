@@ -29,6 +29,7 @@ func SetupRoutes(r *gin.Engine) {
 		api.DELETE("/projects/:id", controllers.DeleteProject)
 		api.POST("/projects/:id/images", controllers.UploadProjectImages)
 		api.POST("/projects/:id/thumbnail", controllers.UpdateProjectThumbnail)
+		api.PUT("/screenshots/:id", controllers.UpdateScreenshotTitle)
 
 		// Professional Journey / Experiences
 		api.GET("/experiences", controllers.GetExperiences)

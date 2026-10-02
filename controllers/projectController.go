@@ -187,3 +187,26 @@ func UpdateProjectThumbnail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, project)
 }
+
+// UpdateScreenshotTitle updates just the title of a specific screenshot
+func UpdateScreenshotTitle(c *gin.Context) {
+	var screenshot models.ImageScreenshot
+	if err := models.DB.First(&screenshot, c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Screenshot not found"})
+		return
+	}
+
+	var input struct {
+		Title string `json:"title"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	screenshot.Title = input.Title
+	models.DB.Save(&screenshot)
+
+	c.JSON(http.StatusOK, screenshot)
+}
+
