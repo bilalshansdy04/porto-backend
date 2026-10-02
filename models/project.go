@@ -18,9 +18,11 @@ type ImageScreenshot struct {
 }
 
 func (p *ImageScreenshot) BeforeCreate(tx *gorm.DB) (err error) {
-	var maxId int64
-	tx.Model(&ImageScreenshot{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
-	p.ID = uint(maxId + 1)
+	if p.ID == 0 {
+		var maxId int64
+		tx.Model(&ImageScreenshot{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
+		p.ID = uint(maxId + 1)
+	}
 	return
 }
 
@@ -43,8 +45,10 @@ type Project struct {
 }
 
 func (p *Project) BeforeCreate(tx *gorm.DB) (err error) {
-	var maxId int64
-	tx.Model(&Project{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
-	p.ID = uint(maxId + 1)
+	if p.ID == 0 {
+		var maxId int64
+		tx.Model(&Project{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
+		p.ID = uint(maxId + 1)
+	}
 	return
 }

@@ -10,8 +10,10 @@ type Setting struct {
 }
 
 func (p *Setting) BeforeCreate(tx *gorm.DB) (err error) {
-	var maxId int64
-	tx.Model(&Setting{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
-	p.ID = uint(maxId + 1)
+	if p.ID == 0 {
+		var maxId int64
+		tx.Model(&Setting{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
+		p.ID = uint(maxId + 1)
+	}
 	return
 }

@@ -13,8 +13,10 @@ type Experience struct {
 }
 
 func (p *Experience) BeforeCreate(tx *gorm.DB) (err error) {
-	var maxId int64
-	tx.Model(&Experience{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
-	p.ID = uint(maxId + 1)
+	if p.ID == 0 {
+		var maxId int64
+		tx.Model(&Experience{}).Select("IFNULL(MAX(id), 0)").Scan(&maxId)
+		p.ID = uint(maxId + 1)
+	}
 	return
 }
