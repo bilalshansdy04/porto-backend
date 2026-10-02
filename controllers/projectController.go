@@ -131,7 +131,7 @@ func UploadProjectImages(c *gin.Context) {
 	for _, url := range newImageURLs {
 		project.Screenshots = append(project.Screenshots, models.ProjectScreenshot{
 			ImageURL:    url,
-			Description: "",
+			Title:       "",
 		})
 	}
 	models.DB.Save(&project)
