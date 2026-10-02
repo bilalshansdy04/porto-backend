@@ -76,7 +76,7 @@ func UpdateProject(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&project).Select("Name", "Description", "Status", "IsVisible", "TechStack", "ProjectFlow", "JobDesc", "Link", "CarouselImages").Updates(input)
+	models.DB.Model(&project).Select("Name", "Description", "Status", "IsVisible", "TechStack", "ProjectFlow", "JobDesc", "Link", "CarouselImages", "Screenshots").Updates(input)
 
 	go CleanupUnusedImages()
 
@@ -127,8 +127,13 @@ func UploadProjectImages(c *gin.Context) {
 		}
 	}
 
-	// Append to existing carousel images
-	project.CarouselImages = append(project.CarouselImages, newImageURLs...)
+	// Append to existing screenshots
+	for _, url := range newImageURLs {
+		project.Screenshots = append(project.Screenshots, models.ProjectScreenshot{
+			ImageURL:    url,
+			Description: "",
+		})
+	}
 	models.DB.Save(&project)
 
 	go CleanupUnusedImages()
