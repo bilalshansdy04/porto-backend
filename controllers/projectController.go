@@ -4,6 +4,7 @@ import (
 	"backend-porto/models"
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
@@ -210,3 +211,41 @@ func UpdateScreenshotTitle(c *gin.Context) {
 	c.JSON(http.StatusOK, screenshot)
 }
 
+
+// DeleteScreenshot removes a screenshot from the database and Cloudinary
+func DeleteScreenshot(c *gin.Context) {
+	var screenshot models.ImageScreenshot
+	if err := models.DB.First(&screenshot, c.Param("id")).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Screenshot not found"})
+		return
+	}
+
+	// Extract PublicID for Cloudinary (e.g. portfolio/filename)
+	publicID := ""
+	parts := strings.Split(screenshot.ImageURL, "/upload/")
+	if len(parts) == 2 {
+		pathParts := strings.SplitN(parts[1], "/", 2)
+		if len(pathParts) == 2 {
+			publicIdWithExt := pathParts[1]
+			extIdx := strings.LastIndex(publicIdWithExt, ".")
+			if extIdx != -1 {
+				publicID = publicIdWithExt[:extIdx]
+			} else {
+				publicID = publicIdWithExt
+			}
+		}
+	}
+
+	// Delete from Cloudinary if publicID was found
+	if publicID != "" {
+		cld, err := cloudinary.New()
+		if err == nil {
+			cld.Upload.Destroy(context.Background(), uploader.DestroyParams{PublicID: publicID})
+		}
+	}
+
+	// Delete from DB
+	models.DB.Delete(&screenshot)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Screenshot deleted successfully"})
+}
